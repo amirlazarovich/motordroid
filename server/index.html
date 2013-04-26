@@ -4,11 +4,52 @@
 		<meta charset="utf-8"/>
 		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0" />
 		<title>Testing web joystick</title>
-
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpOmft-UskZsAQth9vNl0fN6EXaRR6dZc&sensor=true&language=iw"></script>
 		<link href="static/css/default.css" rel="stylesheet"/>
         <script data-main="static/libs/main" src="static/libs/require.js"></script>
+        <script>
+            var INIT_LAT = 32.0833;
+            var INIT_LON = 34.8000;
+            var INIT_ZOOM = 17;
+
+            var marker;
+            function contextMenuMap(event) {
+                marker.setPosition(event.latLng);
+                sendToDevice("control", "navigate", event.latLng.lat(), event.latLng.lng());
+            }
+
+            window.onload = function() {
+                var mapOptions = {
+                    center: new google.maps.LatLng(INIT_LAT, INIT_LON),
+                    zoom: INIT_ZOOM,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP,
+                    mapTypeControl: false,
+                    zoomControl: true,
+                    panControl: true
+                };
+                var map = new google.maps.Map(document.getElementById("mapContainer"), mapOptions);
+
+                marker = new google.maps.Marker({
+                    map: map
+                });
+
+                google.maps.event.addListener( map, "rightclick", contextMenuMap );
+            }
+
+
+        </script>
+
 	</head>
     <body>
+    <div style="width: 50%; float: left">
+        <h1>Map</h1>
+        <div id="mapContainer" style="width: 100%; height: 400px"></div>
 
+    </div>
+    <div style="width: 50%; float: left">
+        <h1>Joystick</h1>
+        <div id="canvasContainer"></div>
+
+    </div>
     </body>
 </html>
