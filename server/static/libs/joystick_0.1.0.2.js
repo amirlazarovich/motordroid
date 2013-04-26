@@ -60,8 +60,8 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
     /**
      * Create a new Joystick module handler
      */
-    (function _Joystick() {
-        setupCanvas();
+    (function _Joystick(element) {
+        setupCanvas(element);
         mSocket = io.connect("/");
         mIsTouchable = 'createTouch' in document;
         if (mIsTouchable) {
@@ -75,7 +75,7 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
             mCanvas.addEventListener('mouseup', onMouseUp, false);
             mCanvas.addEventListener('mousemove', onMouseMove, false);
         }
-    })();
+    })(document.getElementById("canvasContainer"));
 
     ////////////////////////////////////
     ///////// Private
@@ -149,6 +149,8 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
         log.d(TAG, event + ":: " + type + ":: first value: " + firstValue + ", second value: " + secondValue);
     }
 
+	window.sendToDevice = sendToDevice;
+
     /**
      * Draw the joystick on <code>context2D</code>
      *
@@ -206,37 +208,6 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
         context2D.moveTo(touchStartPos.clientX + R, touchStartPos.clientY);
         context2D.lineTo(touch.clientX + r, touch.clientY);
         context2D.stroke();
-
-//        context2D.beginPath();
-//        context2D.strokeStyle = style;
-//        context2D.lineWidth = 2;
-//        context2D.fillStyle = style;
-//        context2D.lineCap = "round";
-//        context2D.lineJoin = 'round';
-//        context2D.moveTo(touchStartPos.clientX, touchStartPos.clientY - R);
-//        context2D.lineTo(touchStartPos.clientX - R, touchStartPos.clientY);
-//        context2D.lineTo(touch.clientX - r, touch.clientY);
-//        context2D.lineTo(touch.clientX, touch.clientY - r);
-//        context2D.lineTo(touch.clientX + r, touch.clientY);
-//        context2D.lineTo(touchStartPos.clientX + R, touchStartPos.clientY);
-//        context2D.lineTo(touchStartPos.clientX, touchStartPos.clientY - R);
-//        context2D.fill();
-//
-//        context2D.beginPath();
-//        context2D.strokeStyle = style;
-//        context2D.lineWidth = 2;
-//        context2D.fillStyle = style;
-//        context2D.lineCap = "round";
-//        context2D.lineJoin = 'round';
-//        context2D.moveTo(touchStartPos.clientX, touchStartPos.clientY + R);
-//        context2D.lineTo(touchStartPos.clientX + R, touchStartPos.clientY);
-//        context2D.lineTo(touch.clientX + r, touch.clientY);
-//        context2D.lineTo(touch.clientX, touch.clientY + r);
-//        context2D.lineTo(touch.clientX - r, touch.clientY);
-//        context2D.lineTo(touchStartPos.clientX - R, touchStartPos.clientY);
-//        context2D.lineTo(touchStartPos.clientX, touchStartPos.clientY + R);
-//        context2D.fill();
-        //log.d(TAG, "joystick-draw: (" + touch.clientX + ", " + touch.clientY + ")");
     }
 
     /**
@@ -246,8 +217,8 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
      */
     function resetCanvas(event) {
         // resize the canvas - but remember - this clears the canvas too.
-        mCanvas.width = window.innerWidth;
-        mCanvas.height = window.innerHeight;
+        mCanvas.width = window.innerWidth / 2;
+        mCanvas.height = 400;
 
         //make sure we scroll to the top left.
         window.scrollTo(0, 0);
@@ -256,15 +227,15 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
     /**
      * Prepare our canvas
      */
-    function setupCanvas() {
+    function setupCanvas(element) {
         mCanvas = document.createElement('canvas');
         mContext2D = mCanvas.getContext('2d');
         mContainer = document.createElement('div');
         mContainer.className = "container";
 
-        mCanvas.width = window.innerWidth;
-        mCanvas.height = window.innerHeight;
-        document.body.appendChild(mContainer);
+        mCanvas.width = window.innerWidth / 2;
+        mCanvas.height = 400;
+        element.appendChild(mContainer);
         mContainer.appendChild(mCanvas);
 
         mContext2D.strokeStyle = "#ffffff";
