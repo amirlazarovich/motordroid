@@ -37,7 +37,7 @@
 ////// Members
 //////////////////////////////////////////
 Log *_log;
-
+unsigned long loop_start;
 typedef struct _Control {
   int throttle;
   int turn;
@@ -103,9 +103,9 @@ void onCommandControl(byte action, byte dataLength, byte* data) {
   switch(action) {
     case ACTION_LEFT_STICK: {
       _log->d("Action Left Stick");
-      int targetThrottle = (int) data[0];
-      _log->d("Raw Throttle: ", targetThrottle);
-      targetThrottle = map(targetThrottle, INPUT_MIN, INPUT_MAX, THROTTLE_MIN, THROTTLE_MAX);
+      int8_t rawThrottle = (int8_t) data[0];
+      _log->d("Raw Throttle: ", rawThrottle);
+      int targetThrottle = map(rawThrottle, INPUT_MIN, INPUT_MAX, THROTTLE_MIN, THROTTLE_MAX);
       _log->d("Throttle: ", targetThrottle);
       _control.throttle = targetThrottle;      
       break;
@@ -113,9 +113,9 @@ void onCommandControl(byte action, byte dataLength, byte* data) {
     
     case ACTION_RIGHT_STICK: {
       _log->d("Action Right Stick");      
-      int targetTurn = (int) data[1];
-      _log->d("Raw Turn: ", targetTurn);
-      targetTurn = map(targetTurn, INPUT_MIN, INPUT_MAX, TURN_MIN, TURN_MAX);
+      int8_t rawTurn = (int8_t) data[1];
+      _log->d("Raw Turn: ", rawTurn);
+      int targetTurn = map(rawTurn, INPUT_MIN, INPUT_MAX, TURN_MIN, TURN_MAX);
       _log->d("Turn: ", targetTurn);
       _control.turn = targetTurn;
       break;
@@ -143,9 +143,9 @@ void onCommandControl(byte action, byte dataLength, byte* data) {
  * This method is called very frequently in an infinite loop
  */
 void onLoop() {
-//  _log->d("Sending - Stand by: ", _control.standby);
-//  _log->d("Sending - Throttle: ", _control.throttle);
-//  _log->d("Sending - Turn: ", _control.turn);
+  while(micros() - loop_start < 10000); // every 10 ms
+  loop_start = micros();
+  
   setMotorsStandby(_control.standby);
   setMotorPower(MOTOR_1, _control.throttle);
   setMotorPower(MOTOR_2, _control.turn);

@@ -8,13 +8,20 @@
  */
 package io.socket;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 
 /**
  * The Class XhrTransport.
@@ -72,6 +79,10 @@ class XhrTransport implements IOTransport {
 					URL url = new URL(XhrTransport.this.url.toString() + "?t="
 							+ System.currentTimeMillis());
 					urlConnection = (HttpURLConnection) url.openConnection();
+					SSLContext context = IOConnection.getSslContext();
+					if(urlConnection instanceof HttpsURLConnection && context != null) {
+						((HttpsURLConnection)urlConnection).setSSLSocketFactory(context.getSocketFactory());
+					}
 					if (!queue.isEmpty()) {
 						urlConnection.setDoOutput(true);
 						OutputStream output = urlConnection.getOutputStream();

@@ -27,3 +27,5 @@ out/
 # Mac files
 .DS_Store
 
+# Archive
+archive/

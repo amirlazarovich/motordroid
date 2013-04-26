@@ -13,7 +13,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -58,8 +58,7 @@ class IOConnection implements IOCallback {
 	public static final String SOCKET_IO_1 = "/socket.io/1/";
 
 	/** The SSL socket factory for HTTPS connections */
-	private static SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory
-			.getDefault();
+	private static SSLContext sslContext = null;
 
 	/** All available connections. */
 	private static HashMap<String, List<IOConnection>> connections = new HashMap<String, List<IOConnection>>();
@@ -171,7 +170,7 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * The Class ConnectThread. Handles connecting to the server with an
-	 * {@link io.socket.IOTransport}
+	 * {@link IOTransport}
 	 */
 	private class ConnectThread extends Thread {
 		/**
@@ -196,16 +195,25 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Set the socket factory used for SSL connections.
-	 *
-	 * @param socketFactory
+	 * 
+	 * @param sslContext
 	 */
-	public static void setDefaultSSLSocketFactory(SSLSocketFactory socketFactory) {
-		sslSocketFactory = socketFactory;
+	public static void setSslContext(SSLContext sslContext) {
+		IOConnection.sslContext = sslContext;
+	}
+
+	/**
+	 * Get the socket factory used for SSL connections.
+	 * 
+	 * @return socketFactory
+	 */
+	public static SSLContext getSslContext() {
+		return sslContext;
 	}
 
 	/**
 	 * Creates a new connection or returns the corresponding one.
-	 *
+	 * 
 	 * @param origin
 	 *            the origin
 	 * @param socket
@@ -233,7 +241,7 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Connects a socket to the IOConnection.
-	 *
+	 * 
 	 * @param socket
 	 *            the socket to be connected
 	 * @return true, if successfully registered on this transport, otherwise
@@ -254,7 +262,7 @@ class IOConnection implements IOCallback {
 	/**
 	 * Disconnect a socket from the IOConnection. Shuts down this IOConnection
 	 * if no further connections are available for this IOConnection.
-	 *
+	 * 
 	 * @param socket
 	 *            the socket to be shut down
 	 */
@@ -270,7 +278,7 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Handshake.
-	 *
+	 * 
 	 */
 	private void handshake() {
 		URL url;
@@ -282,7 +290,7 @@ class IOConnection implements IOCallback {
 			connection = url.openConnection();
 			if (connection instanceof HttpsURLConnection) {
 				((HttpsURLConnection) connection)
-						.setSSLSocketFactory(sslSocketFactory);
+						.setSSLSocketFactory(sslContext.getSocketFactory());
 			}
 			connection.setConnectTimeout(connectTimeout);
 			connection.setReadTimeout(connectTimeout);
@@ -326,12 +334,12 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * Creates a new {@link IOAcknowledge} instance which sends its arguments
+	 * Creates a new {@link io.socket.IOAcknowledge} instance which sends its arguments
 	 * back to the server.
-	 *
+	 * 
 	 * @param message
 	 *            the message
-	 * @return an {@link IOAcknowledge} instance, may be <code>null</code> if
+	 * @return an {@link io.socket.IOAcknowledge} instance, may be <code>null</code> if
 	 *         server doesn't request one.
 	 */
 	private IOAcknowledge remoteAcknowledge(IOMessage message) {
@@ -363,12 +371,12 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * adds an {@link IOAcknowledge} to an {@link io.socket.IOMessage}.
-	 *
+	 * adds an {@link io.socket.IOAcknowledge} to an {@link IOMessage}.
+	 * 
 	 * @param message
-	 *            the {@link io.socket.IOMessage}
+	 *            the {@link IOMessage}
 	 * @param ack
-	 *            the {@link IOAcknowledge}
+	 *            the {@link io.socket.IOAcknowledge}
 	 */
 	private void synthesizeAck(IOMessage message, IOAcknowledge ack) {
 		if (ack != null) {
@@ -380,7 +388,7 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Instantiates a new IOConnection.
-	 *
+	 * 
 	 * @param url
 	 *            the URL
 	 * @param socket
@@ -420,7 +428,7 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Populates an error to the connected {@link io.socket.IOCallback}s and shuts down.
-	 *
+	 * 
 	 * @param e
 	 *            an exception
 	 */
@@ -432,8 +440,8 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * Sends a plain message to the {@link io.socket.IOTransport}.
-	 *
+	 * Sends a plain message to the {@link IOTransport}.
+	 * 
 	 * @param text
 	 *            the Text to be send.
 	 */
@@ -452,7 +460,7 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * Invalidates an {@link io.socket.IOTransport}, used for forced reconnecting.
+	 * Invalidates an {@link IOTransport}, used for forced reconnecting.
 	 */
 	private void invalidateTransport() {
 		if (transport != null)
@@ -467,7 +475,7 @@ class IOConnection implements IOCallback {
 		if (heartbeatTimeoutTask != null) {
 			heartbeatTimeoutTask.cancel();
 		}
-		if(getState() != STATE_INVALID) {
+		if (getState() != STATE_INVALID) {
 			heartbeatTimeoutTask = new HearbeatTimeoutTask();
 			backgroundTimer.schedule(heartbeatTimeoutTask, closingTimeout
 					+ heartbeatTimeout);
@@ -477,7 +485,7 @@ class IOConnection implements IOCallback {
 	/**
 	 * finds the corresponding callback object to an incoming message. Returns a
 	 * dummy callback if no corresponding callback can be found
-	 *
+	 * 
 	 * @param message
 	 *            the message
 	 * @return the iO callback
@@ -496,8 +504,8 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Transport connected.
-	 *
-	 * {@link io.socket.IOTransport} calls this when a connection is established.
+	 * 
+	 * {@link IOTransport} calls this when a connection is established.
 	 */
 	public synchronized void transportConnected() {
 		setState(STATE_READY);
@@ -533,8 +541,8 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Transport disconnected.
-	 *
-	 * {@link io.socket.IOTransport} calls this when a connection has been shut down.
+	 * 
+	 * {@link IOTransport} calls this when a connection has been shut down.
 	 */
 	public void transportDisconnected() {
 		this.lastException = null;
@@ -544,9 +552,9 @@ class IOConnection implements IOCallback {
 
 	/**
 	 * Transport error.
-	 *
+	 * 
 	 * @param error
-	 *            the error {@link io.socket.IOTransport} calls this, when an exception
+	 *            the error {@link IOTransport} calls this, when an exception
 	 *            has occurred and the transport is not usable anymore.
 	 */
 	public void transportError(Exception error) {
@@ -556,9 +564,9 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * {@link io.socket.IOTransport} should call this function if it does not support
+	 * {@link IOTransport} should call this function if it does not support
 	 * framing. If it does, transportMessage should be used
-	 *
+	 * 
 	 * @param text
 	 *            the text
 	 */
@@ -586,9 +594,9 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * Transport message. {@link io.socket.IOTransport} calls this, when a message has
+	 * Transport message. {@link IOTransport} calls this, when a message has
 	 * been received.
-	 *
+	 * 
 	 * @param text
 	 *            the text
 	 */
@@ -751,8 +759,8 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * Returns the session id. This should be called from a {@link io.socket.IOTransport}
-	 *
+	 * Returns the session id. This should be called from a {@link IOTransport}
+	 * 
 	 * @return the session id to connect to the right Session.
 	 */
 	public String getSessionId() {
@@ -760,8 +768,8 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * sends a String message from {@link io.socket.SocketIO} to the {@link io.socket.IOTransport}.
-	 *
+	 * sends a String message from {@link SocketIO} to the {@link IOTransport}.
+	 * 
 	 * @param socket
 	 *            the socket
 	 * @param ack
@@ -777,8 +785,8 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * sends a JSON message from {@link io.socket.SocketIO} to the {@link io.socket.IOTransport}.
-	 *
+	 * sends a JSON message from {@link SocketIO} to the {@link IOTransport}.
+	 * 
 	 * @param socket
 	 *            the socket
 	 * @param ack
@@ -794,7 +802,7 @@ class IOConnection implements IOCallback {
 	}
 
 	/**
-	 * emits an event from {@link io.socket.SocketIO} to the {@link io.socket.IOTransport}.
+	 * emits an event from {@link SocketIO} to the {@link IOTransport}.
 	 * 
 	 * @param socket
 	 *            the socket
@@ -846,7 +854,8 @@ class IOConnection implements IOCallback {
 	 *            the new state
 	 */
 	private synchronized void setState(int state) {
-		this.state = state;
+		if (getState() != STATE_INVALID)
+			this.state = state;
 	}
 
 	/**

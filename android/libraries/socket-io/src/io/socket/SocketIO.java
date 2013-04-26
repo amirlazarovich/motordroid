@@ -10,7 +10,7 @@ package io.socket;
 
 import org.json.JSONObject;
 
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLContext;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
@@ -124,16 +124,16 @@ public class SocketIO {
 	
 	/**
 	 * Set the socket factory used for SSL connections.
-	 * @param socketFactory
+	 * @param sslContext
 	 */
-	public static void setDefaultSSLSocketFactory(SSLSocketFactory socketFactory) {
-		IOConnection.setDefaultSSLSocketFactory(socketFactory);
+	public static void setDefaultSSLSocketFactory(SSLContext sslContext) {
+		IOConnection.setSslContext(sslContext);
 	}
 	
 	/**
 	 * connects to supplied host using callback. Do only use this method if you
-	 * instantiate {@link SocketIO} using {@link #SocketIO()}.
-	 *
+	 * instantiate {@link io.socket.SocketIO} using {@link #SocketIO()}.
+	 * 
 	 * @param url
 	 *            the url
 	 * @param callback
@@ -152,8 +152,8 @@ public class SocketIO {
 
 	/**
 	 * connects to supplied host using callback. Do only use this method if you
-	 * instantiate {@link SocketIO} using {@link #SocketIO()}.
-	 *
+	 * instantiate {@link io.socket.SocketIO} using {@link #SocketIO()}.
+	 * 
 	 * @param url
 	 *            the url
 	 * @param callback
@@ -171,15 +171,15 @@ public class SocketIO {
 
 	/**
 	 * connects to an already set host. Do only use this method if you
-	 * instantiate {@link SocketIO} using {@link #SocketIO(String)} or
+	 * instantiate {@link io.socket.SocketIO} using {@link #SocketIO(String)} or
 	 * {@link #SocketIO(java.net.URL)}.
 	 * 
-	 * @param ioCallback
+	 * @param callback
 	 *            the callback
 	 */
-	public void connect(IOCallback ioCallback) {
-		if (setAndConnect(null, ioCallback) == false) {
-			if (ioCallback == null)
+	public void connect(IOCallback callback) {
+		if (setAndConnect(null, callback) == false) {
+			if (callback == null)
 				throw new RuntimeException("callback may not be null.");
 			else if (this.url == null)
 				throw new RuntimeException(
@@ -338,7 +338,7 @@ public class SocketIO {
 	 *         not connected or currently connecting
 	 */
 	public boolean isConnected() {
-		return this.connection.isConnected();
+		return this.connection != null && this.connection.isConnected();
 	}
 	
 	/**
