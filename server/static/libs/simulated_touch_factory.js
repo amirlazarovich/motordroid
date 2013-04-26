@@ -86,11 +86,12 @@ define(['config', 'log'], function (config, log) {
 
                         log.d(TAG, "slow-stop: (" + me.clientX + ", " + me.clientY + ")");
                         log.d(TAG, "targetPoint: " + targetPoint + ", varX: " + varPoint + ", stepSign: " + stepSign);
-                        callback.onStep(me.startX, me.startY, me.clientX, me.clientY);
 
                         if (((targetPoint - varPoint) * stepSign) <= 0) {
                             clearInterval(me.intervalId);
                             callback.onEnd(this);
+                        } else {
+                            callback.onStep(me.startX, me.startY, me.clientX, me.clientY);
                         }
                     }, delay);
                 }
