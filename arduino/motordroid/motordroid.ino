@@ -2,19 +2,25 @@
 #include <Usb.h>
 #include <AndroidAccessory.h>
 #include <Log.h>
+#include <Ultrasonic.h>
 
 //////////////////////////////////////////
 ////// Constants
 //////////////////////////////////////////
 #define DEBUG                       true
 
-#define MOTOR_1_PWMA_PIN            3
-#define MOTOR_1_AIN1_PIN            4
-#define MOTOR_1_AIN2_PIN            5
-#define MOTOR_2_PWMB_PIN            8
-#define MOTOR_2_BIN1_PIN            9
-#define MOTOR_2_BIN2_PIN           10
-#define MOTORS_STANDBY_PIN          7
+// PINS
+#define MOTOR_1_PWMA_PIN            8
+#define MOTOR_1_AIN1_PIN            6
+#define MOTOR_1_AIN2_PIN            7
+#define MOTOR_2_PWMB_PIN            2
+#define MOTOR_2_BIN1_PIN            3 // connected backwards
+#define MOTOR_2_BIN2_PIN            4 // connected backwards
+#define MOTORS_STANDBY_PIN          5
+#define TRIGGER_PIN                 9
+#define ECHO_PIN                   10
+#define RED_LED_PIN                11
+#define GREEN_LED_PIN              12
 
 #define MOTOR_1                     1
 #define MOTOR_2                     2
@@ -33,6 +39,8 @@
 
 #define TURN_MIN                 -255
 #define TURN_MAX                  255
+
+#define MAX_DISTANCE_TO_AVOID_COLLISION 70
 //////////////////////////////////////////
 ////// Members
 //////////////////////////////////////////
@@ -46,6 +54,9 @@ typedef struct _Control {
 
 
 Control _control;
+Ultrasonic _ultrasonic(TRIGGER_PIN, ECHO_PIN);
+long _lastDistanceSampleTime;
+float _lastDistanceInCM;
 //////////////////////////////////////////
 ////// Initialization
 //////////////////////////////////////////
@@ -66,6 +77,9 @@ void onCreate() {
   
   pinMode(MOTORS_STANDBY_PIN, OUTPUT);  
     
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);  
+  
   _control.throttle = 0;
   _control.turn = 0;
   _control.standby = HIGH; // disabled
@@ -134,6 +148,40 @@ void onCommandControl(byte action, byte dataLength, byte* data) {
   }     
 }
 
+/**
+ * Detect collision and stop all motors
+ *
+ * @param speed
+ */
+void onDetectCollision(int speed) {
+  long microsec = _ultrasonic.timing();
+  long currentDistanceSampleTime = millis();
+  float distanceInCM = _ultrasonic.convert(microsec, Ultrasonic::CM);
+  long deltaTime = currentDistanceSampleTime - _lastDistanceSampleTime;
+  _lastDistanceSampleTime = currentDistanceSampleTime;
+  int deltaDistance = abs(distanceInCM - _lastDistanceInCM) * 1000;
+  _lastDistanceInCM = distanceInCM;
+  // V * T = D --> V = D / T
+  float currentSpeed = deltaDistance / deltaTime;
+  
+
+  _log->d("Current speed (cm/ms): ", currentSpeed);  
+  
+  
+  _log->d("Distance from front objects: ", distanceInCM);
+  if (distanceInCM < MAX_DISTANCE_TO_AVOID_COLLISION && speed >= 0) {
+      _log->d("Collision detected! Shutting down all engines");
+      _control.throttle = 0;
+      _control.turn = 0;
+      digitalWrite(RED_LED_PIN, HIGH);
+      digitalWrite(GREEN_LED_PIN, LOW);  
+  } else {
+      digitalWrite(RED_LED_PIN, LOW);
+      digitalWrite(GREEN_LED_PIN, HIGH);  
+  }  
+  
+}
+
 //////////////////////////////////////////
 ////// Main loop
 //////////////////////////////////////////
@@ -143,9 +191,10 @@ void onCommandControl(byte action, byte dataLength, byte* data) {
  * This method is called very frequently in an infinite loop
  */
 void onLoop() {
-  while(micros() - loop_start < 10000); // every 10 ms
-  loop_start = micros();
+//  while(micros() - loop_start < 10000); // every 10 ms
+//  loop_start = micros();
   
+  onDetectCollision(_control.throttle);
   setMotorsStandby(_control.standby);
   setMotorPower(MOTOR_1, _control.throttle);
   setMotorPower(MOTOR_2, _control.turn);

@@ -217,8 +217,8 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
      */
     function resetCanvas(event) {
         // resize the canvas - but remember - this clears the canvas too.
-        mCanvas.width = window.innerWidth / 2;
-        mCanvas.height = 400;
+        mCanvas.width = window.innerWidth;
+        mCanvas.height = window.innerHeight;
 
         //make sure we scroll to the top left.
         window.scrollTo(0, 0);
@@ -233,8 +233,8 @@ define(['socket.io', 'simulated_touch_factory', 'config', 'log', "prototype"], f
         mContainer = document.createElement('div');
         mContainer.className = "container";
 
-        mCanvas.width = window.innerWidth / 2;
-        mCanvas.height = 400;
+        mCanvas.width = window.innerWidth;
+        mCanvas.height = window.innerHeight;
         element.appendChild(mContainer);
         mContainer.appendChild(mCanvas);
 
